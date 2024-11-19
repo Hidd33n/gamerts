@@ -74,65 +74,80 @@ class UnitService {
     print('UnitService: Unidades inicializadas.');
   }
 
-  /// Crear una unidad y añadirla a la cola de entrenamiento
-  static Future<bool> createUnit(
-      City city, String buildingType, String unitName) async {
-    final unitData = await DbService.unitsCollection
-        .findOne({'building': buildingType, 'name': unitName});
-
-    if (unitData == null) return false;
-
-    // Verificar recursos
-    final cost = unitData['cost'] as Map<String, dynamic>;
-    if ((city.resources['wood'] ?? 0) < (cost['wood'] as int) ||
-        (city.resources['stone'] ?? 0) < (cost['stone'] as int) ||
-        (city.resources['silver'] ?? 0) < (cost['silver'] as int)) {
-      return false;
-    }
-
-    // Reducir recursos
-    city.resources['wood'] = (city.resources['wood']! - (cost['wood'] as int));
-    city.resources['stone'] =
-        (city.resources['stone']! - (cost['stone'] as int));
-    city.resources['silver'] =
-        (city.resources['silver']! - (cost['silver'] as int));
-
-    // Añadir a la cola de entrenamiento
-    final startTime = DateTime.now();
-    final finishTime =
-        startTime.add(Duration(seconds: unitData['trainingTime'] as int));
-
-    city.trainingQueue.add({
-      'unitName': unitName,
-      'startTime': startTime.toIso8601String(),
-      'finishTime': finishTime.toIso8601String(),
-    });
-
-    // Guardar ciudad en la base de datos
-    await DbService.citiesCollection.updateOne(
-      {'cityId': city.cityId},
-      {'\$set': city.toMap()},
-    );
-
-    return true;
-  }
-
-  /// Procesar la cola de entrenamiento de una ciudad
   static void processTrainingQueue(City city) {
     final now = DateTime.now();
 
     city.trainingQueue.removeWhere((queueItem) {
       final finishTime = DateTime.parse(queueItem['finishTime']);
       if (now.isAfter(finishTime)) {
-        city.units.add(queueItem['unitName']);
-        return true;
+        final unitName = queueItem['unitName'] as String;
+        final quantity = queueItem['quantity'] as int;
+
+        // Actualizar la cantidad de unidades entrenadas
+        city.units[unitName] = (city.units[unitName] ?? 0) + quantity;
+
+        return true; // Eliminar de la cola de entrenamiento
       }
-      return false;
+      return false; // Mantener en la cola
     });
 
+    // Persistir los cambios en la base de datos
     DbService.citiesCollection.updateOne(
       {'cityId': city.cityId},
       {'\$set': city.toMap()},
     );
+  }
+
+  static Future<bool> createUnit(
+      City city, String buildingType, String unitName, int quantity) async {
+    final unitData = await DbService.unitsCollection
+        .findOne({'building': buildingType, 'name': unitName});
+
+    if (unitData == null) return false;
+
+    final cost = unitData['cost'] as Map<String, dynamic>;
+    final totalCost = {
+      'wood': cost['wood'] * quantity,
+      'stone': cost['stone'] * quantity,
+      'silver': cost['silver'] * quantity,
+    };
+
+    // Verificar recursos
+    if (city.resources['wood']! < totalCost['wood'] ||
+        city.resources['stone']! < totalCost['stone'] ||
+        city.resources['silver']! < totalCost['silver']) {
+      return false;
+    }
+
+// Reducir recursos
+    city.resources['wood'] =
+        (city.resources['wood'] ?? 0) - (totalCost['wood'] as int);
+    city.resources['stone'] =
+        (city.resources['stone'] ?? 0) - (totalCost['stone'] as int);
+    city.resources['silver'] =
+        (city.resources['silver'] ?? 0) - (totalCost['silver'] as int);
+
+    // Calcular tiempo de entrenamiento
+    final baseTime = unitData['trainingTime'];
+    final totalTime = baseTime * quantity;
+
+    final startTime = DateTime.now();
+    final finishTime = startTime.add(Duration(seconds: totalTime));
+
+    // Añadir a la cola
+    city.trainingQueue.add({
+      'unitName': unitName,
+      'quantity': quantity,
+      'startTime': startTime.toIso8601String(),
+      'finishTime': finishTime.toIso8601String(),
+    });
+
+    // Persistir cambios
+    await DbService.citiesCollection.updateOne(
+      {'cityId': city.cityId},
+      {'\$set': city.toMap()},
+    );
+
+    return true;
   }
 }

@@ -59,7 +59,7 @@ class AssignmentManager {
       resources: {'wood': 1000, 'stone': 1000, 'silver': 1000},
       constructionQueue: [],
       trainingQueue: [],
-      units: [],
+      units: {},
     );
 
     // Insertar ciudad en la base de datos

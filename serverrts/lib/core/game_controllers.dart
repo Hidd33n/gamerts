@@ -193,4 +193,24 @@ class GameController {
         (city.resources['silver']! + silverRate * elapsedMinutes)
             .clamp(0, warehouseCapacity);
   }
+
+  static void startTrainingProcessing() {
+    Timer.periodic(const Duration(seconds: 1), (timer) async {
+      print("GameController: Procesando colas de entrenamiento.");
+
+      final cities = await DbService.citiesCollection.find().toList();
+
+      for (var cityMap in cities) {
+        final city = City.fromMap(cityMap);
+
+        // Procesar cola de entrenamiento
+        UnitService.processTrainingQueue(city);
+
+        // Notificar al cliente si está conectado
+        if (UserConnectionManager.isUserActive(city.ownerId)) {
+          CityService.sendCityUpdate(city.ownerId, city);
+        }
+      }
+    });
+  }
 }

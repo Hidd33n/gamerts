@@ -8,6 +8,7 @@ Future<void> main() async {
   // Inicializar conexión a la base de datos
   await DbService.init();
   GameController.startResourceGeneration();
+  GameController.startTrainingProcessing();
   UnitService.initializeUnits();
   // Crear manejador de WebSocket para cada cliente
   final handler = webSocketHandler((webSocket) {

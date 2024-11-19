@@ -5,12 +5,11 @@ class City {
   String ownerId;
   String islandId;
   int slotIndex;
-  Map<String, Building>
-      buildings; // Cambiar de Map<String, int> a Map<String, Building>
+  Map<String, Building> buildings;
   Map<String, int> resources;
   List<Map<String, dynamic>> constructionQueue;
-  List<Map<String, dynamic>> trainingQueue; // Nueva cola de entrenamiento
-  List<String> units; // Lista de unidades entrenadas
+  List<Map<String, dynamic>> trainingQueue;
+  Map<String, int> units; // Cambiar de lista a mapa para almacenar cantidades
   String lastUpdated;
 
   City({
@@ -21,12 +20,12 @@ class City {
     required this.buildings,
     required this.resources,
     required this.constructionQueue,
-    required this.trainingQueue, // Inicializar la cola de entrenamiento
-    required this.units, // Inicializar la lista de unidades
+    required this.trainingQueue,
+    required this.units, // Inicializar el mapa de unidades
     String? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
 
-  /// Método para convertir a un mapa, serializando edificios
+  /// Método para convertir a un mapa
   Map<String, dynamic> toMap() {
     return {
       'cityId': cityId,
@@ -36,13 +35,13 @@ class City {
       'buildings': buildings.map((key, value) => MapEntry(key, value.toMap())),
       'resources': resources,
       'constructionQueue': constructionQueue,
-      'trainingQueue': trainingQueue, // Incluir la cola de entrenamiento
-      'units': units, // Incluir las unidades
+      'trainingQueue': trainingQueue,
+      'units': units, // Incluir el mapa de unidades
       'lastUpdated': lastUpdated,
     };
   }
 
-  /// Crear una ciudad desde un mapa, deserializando edificios
+  /// Crear una ciudad desde un mapa
   factory City.fromMap(Map<String, dynamic> map) {
     return City(
       cityId: map['cityId'] as String,
@@ -57,8 +56,8 @@ class City {
           List<Map<String, dynamic>>.from(map['constructionQueue']),
       trainingQueue: List<Map<String, dynamic>>.from(
           map['trainingQueue'] ?? []), // Convertir cola de entrenamiento
-      units:
-          List<String>.from(map['units'] ?? []), // Convertir lista de unidades
+      units: Map<String, int>.from(
+          map['units'] ?? {}), // Convertir mapa de unidades
       lastUpdated:
           map['lastUpdated'] as String? ?? DateTime.now().toIso8601String(),
     );

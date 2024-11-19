@@ -6,32 +6,34 @@ class ConstructionManager {
   /// Procesar la cola de construcción y actualizar edificios terminados
   static bool updateConstructionQueue(City city) {
     final now = DateTime.now();
-    bool updated = false;
 
-    city.constructionQueue.removeWhere((queueItem) {
-      final finishTime = DateTime.parse(queueItem['finishTime']);
-      if (now.isAfter(finishTime)) {
-        final buildingName = queueItem['buildingName'];
+    if (city.constructionQueue.isEmpty) return false;
 
-        // Mejorar el edificio
-        final currentBuilding = city.buildings[buildingName];
-        if (currentBuilding != null) {
-          city.buildings[buildingName] = currentBuilding.upgrade();
-          updated = true;
-        }
-        return true; // Eliminar el elemento completado de la cola
+    final currentConstruction = city.constructionQueue.first;
+    final finishTime = DateTime.parse(currentConstruction['finishTime']);
+
+    if (now.isAfter(finishTime)) {
+      final buildingName = currentConstruction['buildingName'];
+
+      // Mejorar el edificio
+      final currentBuilding = city.buildings[buildingName];
+      if (currentBuilding != null) {
+        city.buildings[buildingName] = currentBuilding.upgrade();
       }
-      return false;
-    });
 
-    if (updated) {
+      // Eliminar de la cola
+      city.constructionQueue.removeAt(0);
+
+      // Actualizar en la base de datos
       DbService.citiesCollection.updateOne(
         {'cityId': city.cityId},
         {'\$set': city.toMap()},
       );
+
+      return true;
     }
 
-    return updated;
+    return false;
   }
 
   /// Cancelar construcción en progreso
