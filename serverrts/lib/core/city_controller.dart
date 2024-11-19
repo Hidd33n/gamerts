@@ -1,5 +1,7 @@
+import 'package:serverrts/models/city.dart';
 import 'package:serverrts/services/city/city_services.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
+import 'package:serverrts/services/core/db_services.dart';
 import 'package:serverrts/services/core/unit_services.dart';
 
 class CityController {
@@ -50,12 +52,13 @@ class CityController {
     try {
       final unitName = data['unitName'];
       final buildingType = data['buildingType'];
+      final quantity = data['quantity'];
 
-      if (unitName == null || buildingType == null) {
+      if (unitName == null || buildingType == null || quantity == null) {
         send({
           'action': 'error',
           'message':
-              'Parámetros inválidos. Se requieren unitName y buildingType.'
+              'Parámetros inválidos. Se requieren unitName, buildingType y quantity.'
         });
         return;
       }
@@ -70,11 +73,12 @@ class CityController {
       }
 
       final success =
-          await UnitService.createUnit(city, buildingType, unitName);
+          await UnitService.createUnit(city, buildingType, unitName, quantity);
       if (success) {
         send({
           'action': 'unit_training_started',
           'unitName': unitName,
+          'quantity': quantity,
           'message': 'Entrenamiento de unidad iniciado con éxito.'
         });
       } else {
@@ -114,5 +118,44 @@ class CityController {
 
   void handleUserDisconnect(String userId) {
     CityService.handleUserDisconnect(userId);
+  }
+
+  static Future<bool> cancelTraining(City city, int queueIndex) async {
+    if (queueIndex >= city.trainingQueue.length) return false;
+
+    final queueItem = city.trainingQueue[queueIndex];
+    final String unitName = queueItem['unitName'] as String;
+    final int quantity = (queueItem['quantity'] ?? 1) as int;
+
+    // Buscar datos de la unidad
+    final unitData =
+        await DbService.unitsCollection.findOne({'name': unitName});
+    if (unitData == null) return false;
+
+    final Map<String, dynamic> cost = unitData['cost'] as Map<String, dynamic>;
+
+    // Convertir valores a int de manera explícita
+    final int woodCost = (cost['wood'] as num).toInt();
+    final int stoneCost = (cost['stone'] as num).toInt();
+    final int silverCost = (cost['silver'] as num).toInt();
+
+    // Sumar recursos, asegurándonos que `city.resources` sea consistente
+    city.resources['wood'] =
+        ((city.resources['wood'] ?? 0) + (woodCost * quantity)).toInt();
+    city.resources['stone'] =
+        ((city.resources['stone'] ?? 0) + (stoneCost * quantity)).toInt();
+    city.resources['silver'] =
+        ((city.resources['silver'] ?? 0) + (silverCost * quantity)).toInt();
+
+    // Remover de la cola
+    city.trainingQueue.removeAt(queueIndex);
+
+    // Persistir cambios
+    await DbService.citiesCollection.updateOne(
+      {'cityId': city.cityId},
+      {'\$set': city.toMap()},
+    );
+
+    return true;
   }
 }
