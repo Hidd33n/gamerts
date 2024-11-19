@@ -1,5 +1,6 @@
 import 'package:serverrts/models/buildings/barracks.dart';
 import 'package:serverrts/models/buildings/farm.dart';
+import 'package:serverrts/models/buildings/library.dart';
 import 'package:serverrts/models/buildings/quarry.dart';
 import 'package:serverrts/models/buildings/sawmill.dart';
 import 'package:serverrts/models/buildings/senate.dart';
@@ -47,6 +48,7 @@ class AssignmentManager {
       'Cantera': Quarry(level: 1),
       'Mina de Plata': SilverMine(level: 1),
       'Almacén': Warehouse(level: 1),
+      'Biblioteca': Library(level: 1),
     };
 
     // Crear ciudad
@@ -60,6 +62,7 @@ class AssignmentManager {
       constructionQueue: [],
       trainingQueue: [],
       units: {},
+      technologies: [],
     );
 
     // Insertar ciudad en la base de datos

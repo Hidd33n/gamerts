@@ -1,3 +1,4 @@
+import 'package:serverrts/models/buildings/library.dart';
 import 'package:serverrts/models/buildings/quarry.dart';
 import 'package:serverrts/models/buildings/sawmill.dart';
 import 'package:serverrts/models/buildings/silvermine.dart';
@@ -51,6 +52,8 @@ class Building {
         return Warehouse(level: map['level']);
       case 'Senado':
         return Senate(level: map['level']);
+      case 'Biblioteca': // Agregar el caso de Biblioteca
+        return Library(level: map['level']);
       case 'Puerto':
         return Harbor(level: map['level']);
       case 'Muralla':

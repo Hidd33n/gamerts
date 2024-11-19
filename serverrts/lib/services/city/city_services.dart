@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:serverrts/models/city.dart';
+import 'package:serverrts/models/tech/tech.dart';
 import 'package:serverrts/services/city/assignament_manager.dart';
 import 'package:serverrts/services/city/construction_manager.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
@@ -85,5 +86,53 @@ class CityService {
   static void handleUserDisconnect(String userId) {
     UserConnectionManager.stopUpdates(userId);
     cityCache.remove(userId);
+  }
+
+  static Future<bool> startResearch(City city, String technologyName) async {
+    final academyLevel = city.buildings['Academy']?.level ?? 0;
+    final libraryLevel = city.buildings['Biblioteca']?.level ?? 0;
+    final researchSpeedBoost = libraryLevel * 5; // 5% por nivel
+    final reductionFactor = (researchSpeedBoost / 100);
+
+    final technology = await DbService.technologiesCollection
+        .findOne({'name': technologyName});
+    if (technology == null) return false;
+
+    final tech = Technology.fromMap(technology);
+
+    // Verificar requisitos
+    if (academyLevel < tech.requiredAcademyLevel) return false;
+    if (city.resources['wood']! < tech.cost['wood']! ||
+        city.resources['stone']! < tech.cost['stone']! ||
+        city.resources['silver']! < tech.cost['silver']!) return false;
+
+// Reducir recursos asegurando que no sean nulos
+    city.resources['wood'] =
+        (city.resources['wood'] ?? 0) - (tech.cost['wood'] ?? 0);
+    city.resources['stone'] =
+        (city.resources['stone'] ?? 0) - (tech.cost['stone'] ?? 0);
+    city.resources['silver'] =
+        (city.resources['silver'] ?? 0) - (tech.cost['silver'] ?? 0);
+
+    // Añadir a la cola de investigación
+    final startTime = DateTime.now();
+    final researchTime = tech.researchTime -
+        Duration(
+            seconds: (tech.researchTime.inSeconds * reductionFactor).toInt());
+    final finishTime = startTime.add(researchTime);
+
+    city.trainingQueue.add({
+      'type': 'Research',
+      'technology': technologyName,
+      'startTime': startTime.toIso8601String(),
+      'finishTime': finishTime.toIso8601String(),
+    });
+
+    await DbService.citiesCollection.updateOne(
+      {'cityId': city.cityId},
+      {'\$set': city.toMap()},
+    );
+
+    return true;
   }
 }

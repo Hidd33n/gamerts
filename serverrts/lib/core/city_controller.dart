@@ -1,4 +1,5 @@
 import 'package:serverrts/models/city.dart';
+import 'package:serverrts/models/tech/tech.dart';
 import 'package:serverrts/services/city/city_services.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
 import 'package:serverrts/services/core/battle_services.dart';
@@ -194,5 +195,25 @@ class CityController {
         'message': 'Error interno al iniciar la batalla.'
       });
     }
+  }
+
+  static void processResearchQueue(City city) {
+    final now = DateTime.now();
+
+    city.trainingQueue.removeWhere((queueItem) {
+      if (queueItem['type'] == 'Research') {
+        final finishTime = DateTime.parse(queueItem['finishTime']);
+        if (now.isAfter(finishTime)) {
+          city.technologies.add(queueItem['technology']);
+          return true;
+        }
+      }
+      return false;
+    });
+
+    DbService.citiesCollection.updateOne(
+      {'cityId': city.cityId},
+      {'\$set': city.toMap()},
+    );
   }
 }
