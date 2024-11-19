@@ -1,44 +1,49 @@
-// lib/services/db_service.dart
-
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:serverrts/services/map/map_services.dart';
 
 class DbService {
   static late Db db;
-  static late DbCollection usersCollection;
-  static late DbCollection mapsCollection;
-  static late DbCollection islandsCollection;
-  static late DbCollection citiesCollection;
-  static late DbCollection buildingsCollection;
-  static late DbCollection unitsCollection;
-  static late DbCollection battlesCollection;
 
+  static DbCollection get usersCollection => db.collection('users');
+  static DbCollection get mapsCollection => db.collection('maps');
+  static DbCollection get islandsCollection => db.collection('islands');
+  static DbCollection get citiesCollection => db.collection('cities');
+  static DbCollection get buildingsCollection => db.collection('buildings');
+  static DbCollection get unitsCollection => db.collection('units');
+  static DbCollection get battlesCollection => db.collection('battles');
+
+  /// Inicializar conexión a MongoDB
   static Future<void> init() async {
-    db = Db('mongodb://localhost:27017/game_db');
-    await db.open();
-    print('Conectado a MongoDB');
+    final mongoUri = const String.fromEnvironment('MONGO_URI',
+        defaultValue: 'mongodb://localhost:27017/game_db');
 
-    usersCollection = db.collection('users');
-    mapsCollection = db.collection('maps');
-    islandsCollection = db.collection('islands');
-    citiesCollection = db.collection('cities');
-    buildingsCollection = db.collection('buildings');
-    unitsCollection = db.collection('units');
-    battlesCollection = db.collection('battles');
+    try {
+      db = Db(mongoUri);
+      await db.open();
+      print('Conectado a MongoDB en $mongoUri');
 
-    // Verificar si el mapa ya existe; si no, crearlo
-    await _initializeMap();
+      // Verificar si el mapa existe o debe generarse
+      await _initializeMap();
+    } catch (e) {
+      print('Error al conectar con MongoDB: $e');
+      rethrow;
+    }
   }
 
+  /// Verificar y generar el mapa si no existe
   static Future<void> _initializeMap() async {
-    var existingMap = await mapsCollection.findOne();
-    if (existingMap == null) {
-      print('No se encontró un mapa existente. Generando uno nuevo...');
-      // Generar y guardar el mapa
-      await MapService.generateMap(10, 20); // Tamaño 10x10 y 20 islas
-      print('Mapa generado y guardado en la base de datos.');
-    } else {
-      print('Mapa existente encontrado en la base de datos.');
+    try {
+      var existingMap = await mapsCollection.findOne();
+      if (existingMap == null) {
+        print('No se encontró un mapa existente. Generando uno nuevo...');
+        await MapService.generateMap(10, 20); // Tamaño 10x10 y 20 islas
+        print('Mapa generado y guardado en la base de datos.');
+      } else {
+        print('Mapa existente encontrado en la base de datos.');
+      }
+    } catch (e) {
+      print('Error al verificar o generar el mapa: $e');
+      rethrow;
     }
   }
 }

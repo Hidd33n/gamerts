@@ -7,6 +7,7 @@ import 'package:serverrts/models/city.dart';
 import 'package:serverrts/services/city/city_services.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
 import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/services/core/unit_services.dart';
 import 'package:serverrts/utils/jwt.dart';
 import 'package:serverrts/utils/timeutils.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -30,7 +31,6 @@ class GameController {
     );
   }
 
-  /// Manejar el mensaje recibido
   Future<void> _handleMessage(dynamic message) async {
     final data = jsonDecode(message as String) as Map<String, dynamic>;
     final String action = data['action'] as String;
@@ -49,7 +49,7 @@ class GameController {
 
       switch (action) {
         case 'get_map':
-          await mapController.handleGetMap(send); // Pasar 'send' como argumento
+          await mapController.handleGetMap(send);
           break;
         case 'get_city':
           await cityController.handleGetCity(userId!, send);
@@ -59,6 +59,9 @@ class GameController {
           break;
         case 'cancel_construction':
           await cityController.handleCancelConstruction(userId!, data, send);
+          break;
+        case 'train_unit':
+          await cityController.handleTrainUnit(userId!, data, send);
           break;
         default:
           send({'action': 'error', 'message': 'Acción no reconocida.'});
@@ -70,7 +73,6 @@ class GameController {
     }
   }
 
-  /// Autenticar el usuario basado en el token
   Future<bool> _authenticate(
       Map<String, dynamic> data, Function(Map<String, dynamic>) send) async {
     final String? token = data['token'] as String?;
@@ -90,13 +92,52 @@ class GameController {
     return true;
   }
 
-  /// Manejar desconexión del cliente
   void _handleDisconnect() {
     print('Cliente desconectado: $userId');
     if (userId != null) {
       UserConnectionManager.stopUpdates(userId!);
       cityController.handleUserDisconnect(userId!);
     }
+  }
+
+  /// Iniciar generación de recursos y procesamiento de colas
+  static void startGameLoops() {
+    Timer.periodic(const Duration(seconds: 10), (timer) async {
+      print("GameController: Batch updates started.");
+
+      final cities = await DbService.citiesCollection.find().toList();
+
+      for (var cityMap in cities) {
+        final city = City.fromMap(cityMap);
+
+        // Generar recursos
+        final lastUpdated = DateTime.parse(
+            city.lastUpdated ?? DateTime.now().toIso8601String());
+        final now = DateTime.now();
+        final elapsedMinutes = TimeUtils.minutesBetween(lastUpdated, now);
+
+        if (elapsedMinutes > 0) {
+          _generateResources(city, elapsedMinutes);
+          city.lastUpdated = now.toIso8601String();
+        }
+
+        // Procesar colas de entrenamiento
+        UnitService.processTrainingQueue(city);
+
+        // Guardar cambios en la base de datos
+        await DbService.citiesCollection.updateOne(
+          {'cityId': city.cityId},
+          {'\$set': city.toMap()},
+        );
+
+        // Enviar actualizaciones al cliente si está conectado
+        if (UserConnectionManager.isUserActive(city.ownerId)) {
+          CityService.sendCityUpdate(city.ownerId, city);
+        }
+      }
+
+      print("GameController: Batch updates completed.");
+    });
   }
 
   static void startResourceGeneration() {
@@ -108,7 +149,6 @@ class GameController {
       for (var cityMap in cities) {
         final city = City.fromMap(cityMap);
 
-        // Cálculo de tiempo transcurrido
         final lastUpdated = DateTime.parse(
             city.lastUpdated ?? DateTime.now().toIso8601String());
         final now = DateTime.now();
@@ -118,16 +158,14 @@ class GameController {
           _generateResources(city, elapsedMinutes);
           city.lastUpdated = now.toIso8601String();
 
-          // Guardar la actualización en batch
           await DbService.citiesCollection.updateOne(
             {'cityId': city.cityId},
             {'\$set': city.toMap()},
-          ).then((result) {
-            print(
-                "GameController: Update result for city ${city.cityId}: $result");
-          }).catchError((e) {
-            print("GameController: Error updating city ${city.cityId}: $e");
-          });
+          );
+
+          if (UserConnectionManager.isUserActive(city.ownerId)) {
+            CityService.sendCityUpdate(city.ownerId, city);
+          }
         }
       }
 
@@ -135,22 +173,16 @@ class GameController {
     });
   }
 
+  /// Generar recursos para una ciudad
   static void _generateResources(City city, int elapsedMinutes) {
-    print(
-        "GameController: Generating resources for city ${city.cityId} over $elapsedMinutes minutes.");
-
-    final buildings = city.buildings;
-
-    // Calcular producción por minuto
-    final woodRate = (buildings['Aserradero']?.resourceProductionRate ?? 0);
-    final stoneRate = (buildings['Cantera']?.resourceProductionRate ?? 0);
+    final woodRate =
+        (city.buildings['Aserradero']?.resourceProductionRate ?? 0);
+    final stoneRate = (city.buildings['Cantera']?.resourceProductionRate ?? 0);
     final silverRate =
-        (buildings['Mina de Plata']?.resourceProductionRate ?? 0);
+        (city.buildings['Mina de Plata']?.resourceProductionRate ?? 0);
+    final warehouseCapacity =
+        (city.buildings['Almacén']?.storageCapacity ?? 1500);
 
-    // Capacidad máxima del almacén
-    final warehouseCapacity = (buildings['Almacén']?.storageCapacity ?? 1500);
-
-    // Calcular nuevos recursos
     city.resources['wood'] =
         (city.resources['wood']! + woodRate * elapsedMinutes)
             .clamp(0, warehouseCapacity);
@@ -160,14 +192,5 @@ class GameController {
     city.resources['silver'] =
         (city.resources['silver']! + silverRate * elapsedMinutes)
             .clamp(0, warehouseCapacity);
-
-    print("GameController: Resources after update: ${city.resources}");
-
-    // Verificar si el jugador está conectado
-    if (UserConnectionManager.isUserActive(city.ownerId)) {
-      print(
-          "GameController: Player ${city.ownerId} is active, sending resource updates.");
-      CityService.sendCityUpdate(city.ownerId, city);
-    }
   }
 }
