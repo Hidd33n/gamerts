@@ -1,6 +1,7 @@
 import 'package:serverrts/models/city.dart';
 import 'package:serverrts/services/city/city_services.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
+import 'package:serverrts/services/core/battle_services.dart';
 import 'package:serverrts/services/core/db_services.dart';
 import 'package:serverrts/services/core/unit_services.dart';
 
@@ -157,5 +158,41 @@ class CityController {
     );
 
     return true;
+  }
+
+  Future<void> handleBattle(String userId, Map<String, dynamic> data,
+      Function(Map<String, dynamic>) send) async {
+    try {
+      final targetCityId = data['targetCityId'];
+      final attackingUnits = Map<String, int>.from(data['attackingUnits']);
+
+      final attackerCity = await CityService.getCityByUserId(userId);
+      if (attackerCity == null) {
+        send({'action': 'error', 'message': 'Ciudad atacante no encontrada.'});
+        return;
+      }
+
+      final defenderCity = await CityService.getCityByCityId(
+          targetCityId); // Implementa esta función
+      if (defenderCity == null) {
+        send({'action': 'error', 'message': 'Ciudad defensora no encontrada.'});
+        return;
+      }
+
+      final battle = await BattleService.initiateBattle(
+          attackerCity, defenderCity, attackingUnits);
+
+      send({
+        'action': 'battle_result',
+        'result': battle.result,
+        'battleDetails': battle.toMap(),
+      });
+    } catch (e) {
+      print('Error en handleBattle: $e');
+      send({
+        'action': 'error',
+        'message': 'Error interno al iniciar la batalla.'
+      });
+    }
   }
 }

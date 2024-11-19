@@ -9,6 +9,23 @@ import 'package:serverrts/services/core/socket_services.dart';
 class CityService {
   static final Map<String, City> cityCache = {};
 
+  static Future<City?> getCityByCityId(String cityId) async {
+    try {
+      // Buscar la ciudad en la base de datos
+      final cityMap =
+          await DbService.citiesCollection.findOne({'cityId': cityId});
+      if (cityMap == null) return null;
+
+      // Convertir el mapa de la base de datos a un objeto de tipo City
+      final city = City.fromMap(cityMap);
+
+      return city;
+    } catch (e) {
+      print('Error en getCityByCityId: $e');
+      return null;
+    }
+  }
+
   /// Obtener ciudad por userId
   static Future<City?> getCityByUserId(String userId) async {
     final cityMap =
