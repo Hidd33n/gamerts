@@ -9,6 +9,8 @@ class City {
       buildings; // Cambiar de Map<String, int> a Map<String, Building>
   Map<String, int> resources;
   List<Map<String, dynamic>> constructionQueue;
+  List<Map<String, dynamic>> trainingQueue; // Nueva cola de entrenamiento
+  List<String> units; // Lista de unidades entrenadas
   String lastUpdated;
 
   City({
@@ -19,6 +21,8 @@ class City {
     required this.buildings,
     required this.resources,
     required this.constructionQueue,
+    required this.trainingQueue, // Inicializar la cola de entrenamiento
+    required this.units, // Inicializar la lista de unidades
     String? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
 
@@ -32,6 +36,8 @@ class City {
       'buildings': buildings.map((key, value) => MapEntry(key, value.toMap())),
       'resources': resources,
       'constructionQueue': constructionQueue,
+      'trainingQueue': trainingQueue, // Incluir la cola de entrenamiento
+      'units': units, // Incluir las unidades
       'lastUpdated': lastUpdated,
     };
   }
@@ -49,6 +55,10 @@ class City {
       resources: Map<String, int>.from(map['resources'] as Map),
       constructionQueue:
           List<Map<String, dynamic>>.from(map['constructionQueue']),
+      trainingQueue: List<Map<String, dynamic>>.from(
+          map['trainingQueue'] ?? []), // Convertir cola de entrenamiento
+      units:
+          List<String>.from(map['units'] ?? []), // Convertir lista de unidades
       lastUpdated:
           map['lastUpdated'] as String? ?? DateTime.now().toIso8601String(),
     );

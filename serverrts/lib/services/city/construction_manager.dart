@@ -1,17 +1,9 @@
 import 'package:serverrts/models/buildings/building.dart';
-import 'package:serverrts/models/buildings/farm.dart';
-import 'package:serverrts/models/buildings/harbor.dart';
-import 'package:serverrts/models/buildings/sawmill.dart';
-import 'package:serverrts/models/buildings/senate.dart';
-import 'package:serverrts/models/buildings/wall.dart';
-import 'package:serverrts/models/buildings/warehouse.dart';
 import 'package:serverrts/models/city.dart';
 import 'package:serverrts/services/core/db_services.dart';
 
-import '../../models/buildings/silvermine.dart';
-
 class ConstructionManager {
-  /// Actualizar la cola de construcción
+  /// Procesar la cola de construcción y actualizar edificios terminados
   static bool updateConstructionQueue(City city) {
     final now = DateTime.now();
     bool updated = false;
@@ -20,21 +12,19 @@ class ConstructionManager {
       final finishTime = DateTime.parse(queueItem['finishTime']);
       if (now.isAfter(finishTime)) {
         final buildingName = queueItem['buildingName'];
-        final level = queueItem['level'];
 
+        // Mejorar el edificio
         final currentBuilding = city.buildings[buildingName];
         if (currentBuilding != null) {
-          city.buildings[buildingName] =
-              currentBuilding.upgrade(); // Mejorar el edificio
+          city.buildings[buildingName] = currentBuilding.upgrade();
           updated = true;
         }
-        return true; // Eliminar de la cola
+        return true; // Eliminar el elemento completado de la cola
       }
-      return false; // Mantener en la cola
+      return false;
     });
 
     if (updated) {
-      city.lastUpdated = now.toIso8601String();
       DbService.citiesCollection.updateOne(
         {'cityId': city.cityId},
         {'\$set': city.toMap()},
@@ -44,12 +34,14 @@ class ConstructionManager {
     return updated;
   }
 
+  /// Cancelar construcción en progreso
   static Future<bool> cancelConstruction(City city, int queueIndex) async {
     if (queueIndex >= city.constructionQueue.length) return false;
 
     final queueItem = city.constructionQueue[queueIndex];
     final level = queueItem['level'];
 
+    // Devolver recursos proporcionalmente
     city.resources['wood'] =
         ((city.resources['wood'] ?? 0) + (level * 100 * 0.25)).toInt();
     city.resources['stone'] =
@@ -67,31 +59,30 @@ class ConstructionManager {
     return true;
   }
 
+  /// Iniciar una mejora de edificio
   static Future<bool> upgradeBuilding(City city, String buildingName) async {
     final currentBuilding = city.buildings[buildingName];
     if (currentBuilding == null || city.constructionQueue.length >= 3) {
-      return false; // Verificar que el edificio existe y que la cola no está llena
+      return false;
     }
 
     final nextLevel = currentBuilding.level + 1;
-    if (nextLevel > currentBuilding.maxLevel) {
-      return false; // El edificio ya está en el nivel máximo
-    }
+    if (nextLevel > currentBuilding.maxLevel) return false;
 
     final woodCost = nextLevel * 100;
     final stoneCost = nextLevel * 80;
     final silverCost = nextLevel * 60;
 
     if (!_hasEnoughResources(city, woodCost, stoneCost, silverCost)) {
-      return false; // No hay suficientes recursos
+      return false;
     }
 
-    // Reducir los recursos
+// Reducir recursos asegurándote de que no sean null
     city.resources['wood'] = (city.resources['wood'] ?? 0) - woodCost;
     city.resources['stone'] = (city.resources['stone'] ?? 0) - stoneCost;
     city.resources['silver'] = (city.resources['silver'] ?? 0) - silverCost;
 
-    // Calcular el tiempo de construcción
+    // Calcular tiempo de construcción
     final baseTime = currentBuilding.constructionTime;
     final reductionFactor = (city.buildings['Senado']?.level ?? 0) * 0.01;
     final finalTime = baseTime * (1 - reductionFactor);
@@ -106,7 +97,7 @@ class ConstructionManager {
       'level': nextLevel,
     });
 
-    // Actualizar en la base de datos
+    // Persistir cambios
     await DbService.citiesCollection.updateOne(
       {'cityId': city.cityId},
       {'\$set': city.toMap()},
@@ -115,27 +106,7 @@ class ConstructionManager {
     return true;
   }
 
-  static Building? _createBuildingInstance(String name, int level) {
-    switch (name) {
-      case 'Senado':
-        return Senate(level: level);
-      case 'Aserradero':
-        return Sawmill(level: level);
-      case 'Mina de Plata':
-        return SilverMine(level: level);
-      case 'Muralla':
-        return Wall(level: level);
-      case 'Almacén':
-        return Warehouse(level: level);
-      case 'Puerto':
-        return Harbor(level: level);
-      case 'Granja':
-        return Farm(level: level);
-      default:
-        return null;
-    }
-  }
-
+  /// Verificar si hay suficientes recursos
   static bool _hasEnoughResources(City city, int wood, int stone, int silver) {
     return city.resources['wood']! >= wood &&
         city.resources['stone']! >= stone &&

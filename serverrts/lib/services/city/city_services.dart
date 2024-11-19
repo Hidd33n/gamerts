@@ -32,24 +32,36 @@ class CityService {
       String userId, String buildingName) async {
     final city = cityCache[userId] ?? await getCityByUserId(userId);
     if (city == null) return false;
-    return await ConstructionManager.upgradeBuilding(city, buildingName);
+
+    final result =
+        await ConstructionManager.upgradeBuilding(city, buildingName);
+    if (result) {
+      sendCityUpdate(userId, city); // Notificar al cliente si es necesario
+    }
+    return result;
   }
 
   /// Cancelar construcción
   static Future<bool> cancelConstruction(String userId, int queueIndex) async {
     final city = cityCache[userId] ?? await getCityByUserId(userId);
     if (city == null) return false;
-    return await ConstructionManager.cancelConstruction(city, queueIndex);
-  }
 
-  /// Manejar actualizaciones de la ciudad
+    final result =
+        await ConstructionManager.cancelConstruction(city, queueIndex);
+    if (result) {
+      sendCityUpdate(userId, city);
+    }
+    return result;
+  }
 
   /// Enviar actualización de la ciudad
   static void sendCityUpdate(String userId, City city) {
-    SocketService.sendToUser(
-      userId,
-      {'action': 'city_update', 'data': city.toMap()},
-    );
+    if (UserConnectionManager.isUserActive(userId)) {
+      SocketService.sendToUser(
+        userId,
+        {'action': 'city_update', 'data': city.toMap()},
+      );
+    }
   }
 
   /// Manejar desconexión del usuario

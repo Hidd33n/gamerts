@@ -1,5 +1,6 @@
 import 'package:serverrts/services/city/city_services.dart';
 import 'package:serverrts/services/city/user_conection_manager.dart';
+import 'package:serverrts/services/core/unit_services.dart';
 
 class CityController {
   final dynamic webSocket;
@@ -41,6 +42,53 @@ class CityController {
     } catch (e) {
       print('Error en handleUpgradeBuilding: $e');
       send({'action': 'error', 'message': 'Error al mejorar el edificio.'});
+    }
+  }
+
+  Future<void> handleTrainUnit(String userId, Map<String, dynamic> data,
+      Function(Map<String, dynamic>) send) async {
+    try {
+      final unitName = data['unitName'];
+      final buildingType = data['buildingType'];
+
+      if (unitName == null || buildingType == null) {
+        send({
+          'action': 'error',
+          'message':
+              'Parámetros inválidos. Se requieren unitName y buildingType.'
+        });
+        return;
+      }
+
+      final city = await CityService.getCityByUserId(userId);
+      if (city == null) {
+        send({
+          'action': 'error',
+          'message': 'No se encontró la ciudad del jugador.'
+        });
+        return;
+      }
+
+      final success =
+          await UnitService.createUnit(city, buildingType, unitName);
+      if (success) {
+        send({
+          'action': 'unit_training_started',
+          'unitName': unitName,
+          'message': 'Entrenamiento de unidad iniciado con éxito.'
+        });
+      } else {
+        send({
+          'action': 'error',
+          'message': 'Entrenamiento fallido. Verifica recursos o cola.'
+        });
+      }
+    } catch (e) {
+      print('CityController: Error en handleTrainUnit: $e');
+      send({
+        'action': 'error',
+        'message': 'Error interno al entrenar la unidad.'
+      });
     }
   }
 
