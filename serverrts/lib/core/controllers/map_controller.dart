@@ -1,4 +1,4 @@
-import 'package:serverrts/services/map/map_services.dart';
+import 'package:serverrts/core/services/map/map_services.dart';
 
 class MapController {
   final dynamic webSocket;

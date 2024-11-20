@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:serverrts/models/user.dart';
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 import 'package:serverrts/utils/jwt.dart';
 import 'package:uuid/uuid.dart';
 

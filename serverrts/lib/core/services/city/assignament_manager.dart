@@ -8,7 +8,7 @@ import 'package:serverrts/models/buildings/silvermine.dart';
 import 'package:serverrts/models/buildings/warehouse.dart';
 import 'package:serverrts/models/city.dart';
 import 'package:serverrts/models/island.dart';
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 import 'package:uuid/uuid.dart';
 
 class AssignmentManager {

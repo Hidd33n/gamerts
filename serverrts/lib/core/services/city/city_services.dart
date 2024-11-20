@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:serverrts/models/city.dart';
 import 'package:serverrts/models/tech/tech.dart';
-import 'package:serverrts/services/city/assignament_manager.dart';
-import 'package:serverrts/services/city/construction_manager.dart';
-import 'package:serverrts/services/city/user_conection_manager.dart';
-import 'package:serverrts/services/core/db_services.dart';
-import 'package:serverrts/services/core/socket_services.dart';
+import 'package:serverrts/core/services/city/assignament_manager.dart';
+import 'package:serverrts/core/services/city/construction_manager.dart';
+import 'package:serverrts/core/services/city/user_conection_manager.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/socket_services.dart';
 
 class CityService {
   static final Map<String, City> cityCache = {};

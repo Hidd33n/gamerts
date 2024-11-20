@@ -1,10 +1,10 @@
 import 'package:serverrts/models/city.dart';
 import 'package:serverrts/models/tech/tech.dart';
-import 'package:serverrts/services/city/city_services.dart';
-import 'package:serverrts/services/city/user_conection_manager.dart';
-import 'package:serverrts/services/core/battle_services.dart';
-import 'package:serverrts/services/core/db_services.dart';
-import 'package:serverrts/services/core/unit_services.dart';
+import 'package:serverrts/core/services/city/city_services.dart';
+import 'package:serverrts/core/services/city/user_conection_manager.dart';
+import 'package:serverrts/core/services/core/battle_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/unit_services.dart';
 
 class CityController {
   final dynamic webSocket;

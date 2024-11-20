@@ -1,6 +1,6 @@
 import 'package:serverrts/models/buildings/building.dart';
 import 'package:serverrts/models/city.dart';
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 
 class ConstructionManager {
   /// Procesar la cola de construcción y actualizar edificios terminados
