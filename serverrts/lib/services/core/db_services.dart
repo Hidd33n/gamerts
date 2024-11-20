@@ -11,6 +11,8 @@ class DbService {
   static DbCollection get buildingsCollection => db.collection('buildings');
   static DbCollection get unitsCollection => db.collection('units');
   static DbCollection get battlesCollection => db.collection('battles');
+  static DbCollection get technologiesCollection =>
+      db.collection('technologies');
 
   /// Inicializar conexión a MongoDB
   static Future<void> init() async {

@@ -9,7 +9,8 @@ class City {
   Map<String, int> resources;
   List<Map<String, dynamic>> constructionQueue;
   List<Map<String, dynamic>> trainingQueue;
-  Map<String, int> units; // Cambiar de lista a mapa para almacenar cantidades
+  Map<String, int> units; // Mapa para almacenar cantidades de unidades
+  List<String> technologies; // Lista de tecnologías desbloqueadas
   String lastUpdated;
 
   City({
@@ -21,7 +22,8 @@ class City {
     required this.resources,
     required this.constructionQueue,
     required this.trainingQueue,
-    required this.units, // Inicializar el mapa de unidades
+    required this.units,
+    required this.technologies, // Inicializar la lista de tecnologías
     String? lastUpdated,
   }) : lastUpdated = lastUpdated ?? DateTime.now().toIso8601String();
 
@@ -36,7 +38,8 @@ class City {
       'resources': resources,
       'constructionQueue': constructionQueue,
       'trainingQueue': trainingQueue,
-      'units': units, // Incluir el mapa de unidades
+      'units': units,
+      'technologies': technologies, // Incluir las tecnologías
       'lastUpdated': lastUpdated,
     };
   }
@@ -58,6 +61,8 @@ class City {
           map['trainingQueue'] ?? []), // Convertir cola de entrenamiento
       units: Map<String, int>.from(
           map['units'] ?? {}), // Convertir mapa de unidades
+      technologies: List<String>.from(
+          map['technologies'] ?? []), // Convertir lista de tecnologías
       lastUpdated:
           map['lastUpdated'] as String? ?? DateTime.now().toIso8601String(),
     );

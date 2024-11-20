@@ -1,5 +1,6 @@
 import 'package:serverrts/core/game_controllers.dart';
 import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/services/core/tech_services.dart';
 import 'package:serverrts/services/core/unit_services.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -10,6 +11,7 @@ Future<void> main() async {
   GameController.startResourceGeneration();
   GameController.startTrainingProcessing();
   UnitService.initializeUnits();
+  TechnologyService.initializeTechnologies();
   // Crear manejador de WebSocket para cada cliente
   final handler = webSocketHandler((webSocket) {
     GameController(webSocket); // Crear instancia del controlador por cliente

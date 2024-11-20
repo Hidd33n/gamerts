@@ -63,6 +63,9 @@ class GameController {
         case 'train_unit':
           await cityController.handleTrainUnit(userId!, data, send);
           break;
+        case 'start_research': // Nueva acción para iniciar investigaciones
+          await handleStartResearch(userId!, data, send);
+          break;
         default:
           send({'action': 'error', 'message': 'Acción no reconocida.'});
       }
@@ -212,5 +215,50 @@ class GameController {
         }
       }
     });
+  }
+
+  Future<void> handleStartResearch(String userId, Map<String, dynamic> data,
+      Function(Map<String, dynamic>) send) async {
+    try {
+      final technologyName = data['technologyName'];
+
+      if (technologyName == null) {
+        send({
+          'action': 'error',
+          'message': 'Nombre de la tecnología requerido.'
+        });
+        return;
+      }
+
+      final city = await CityService.getCityByUserId(userId);
+      if (city == null) {
+        send({
+          'action': 'error',
+          'message': 'No se encontró la ciudad del jugador.'
+        });
+        return;
+      }
+
+      final success = await CityService.startResearch(city, technologyName);
+      if (success) {
+        send({
+          'action': 'research_started',
+          'technologyName': technologyName,
+          'message': 'Investigación iniciada exitosamente.'
+        });
+      } else {
+        send({
+          'action': 'error',
+          'message':
+              'No se pudo iniciar la investigación. Verifica requisitos y recursos.'
+        });
+      }
+    } catch (e) {
+      print('CityController: Error en handleStartResearch: $e');
+      send({
+        'action': 'error',
+        'message': 'Error interno al iniciar la investigación.'
+      });
+    }
   }
 }
