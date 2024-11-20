@@ -1,4 +1,4 @@
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 
 class TechnologyService {
   static Future<void> initializeTechnologies() async {

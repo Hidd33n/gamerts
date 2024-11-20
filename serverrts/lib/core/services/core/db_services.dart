@@ -1,5 +1,5 @@
 import 'package:mongo_dart/mongo_dart.dart';
-import 'package:serverrts/services/map/map_services.dart';
+import 'package:serverrts/core/services/map/map_services.dart';
 
 class DbService {
   static late Db db;
@@ -13,6 +13,7 @@ class DbService {
   static DbCollection get battlesCollection => db.collection('battles');
   static DbCollection get technologiesCollection =>
       db.collection('technologies');
+  static DbCollection get alliancesCollection => db.collection('alliances');
 
   /// Inicializar conexión a MongoDB
   static Future<void> init() async {

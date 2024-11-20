@@ -1,6 +1,6 @@
 import 'package:serverrts/models/battles.dart';
 import 'package:serverrts/models/city.dart';
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 
 class BattleService {
   static Future<Battle> initiateBattle(City attackerCity, City defenderCity,

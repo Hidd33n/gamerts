@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:serverrts/models/island.dart';
 import 'package:serverrts/models/map_tiles.dart';
-import 'package:serverrts/services/city/city_services.dart';
-import 'package:serverrts/services/core/db_services.dart';
+import 'package:serverrts/core/services/city/city_services.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
 import 'package:uuid/uuid.dart';
 
 class MapService {

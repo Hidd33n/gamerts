@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:serverrts/controllers/auth.dart';
-import 'package:serverrts/core/city_controller.dart';
-import 'package:serverrts/core/map_controller.dart';
+import 'package:serverrts/auth/auth.dart';
+import 'package:serverrts/core/controllers/alliance_controller.dart';
+import 'package:serverrts/core/controllers/city_controller.dart';
+import 'package:serverrts/core/controllers/map_controller.dart';
 import 'package:serverrts/models/city.dart';
-import 'package:serverrts/services/city/city_services.dart';
-import 'package:serverrts/services/city/user_conection_manager.dart';
-import 'package:serverrts/services/core/db_services.dart';
-import 'package:serverrts/services/core/unit_services.dart';
+import 'package:serverrts/core/services/city/city_services.dart';
+import 'package:serverrts/core/services/city/user_conection_manager.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/unit_services.dart';
 import 'package:serverrts/utils/jwt.dart';
 import 'package:serverrts/utils/timeutils.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -66,6 +67,19 @@ class GameController {
         case 'start_research': // Nueva acción para iniciar investigaciones
           await handleStartResearch(userId!, data, send);
           break;
+        case 'create_alliance':
+          await AllianceController().handleCreateAlliance(userId!, data, send);
+          break;
+        case 'join_alliance':
+          await AllianceController().handleJoinAlliance(userId!, data, send);
+          break;
+        case 'leave_alliance':
+          await AllianceController().handleLeaveAlliance(userId!, data, send);
+          break;
+        case 'get_alliances':
+          await AllianceController().handleGetAlliances(send);
+          break;
+
         default:
           send({'action': 'error', 'message': 'Acción no reconocida.'});
       }

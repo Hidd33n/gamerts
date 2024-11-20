@@ -1,7 +1,7 @@
-import 'package:serverrts/core/game_controllers.dart';
-import 'package:serverrts/services/core/db_services.dart';
-import 'package:serverrts/services/core/tech_services.dart';
-import 'package:serverrts/services/core/unit_services.dart';
+import 'package:serverrts/core/controllers/game_controllers.dart';
+import 'package:serverrts/core/services/core/db_services.dart';
+import 'package:serverrts/core/services/core/tech_services.dart';
+import 'package:serverrts/core/services/core/unit_services.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
